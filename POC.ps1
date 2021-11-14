@@ -1,37 +1,41 @@
-param ($configFile = "LabConfig.ps1")
+param (
+    [parameter(Mandatory=$true)]
+    [string]
+    $configFile
+    )
 
 # Verify Running as Admin
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 If (!( $isAdmin )) {
     Write-Host "-- Restarting as Administrator" -ForegroundColor Cyan ; Start-Sleep -Seconds 1
-    Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs 
+    Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -configFile $configFile" -Verb RunAs 
     exit
 }
 
 #region Functions
 
     function WriteInfo($message){
-        Write-Host $message
+        Write-Host "$(Get-Date):: $message"
     }
 
     function WriteInfoHighlighted($message){
-        Write-Host $message -ForegroundColor Cyan
+        Write-Host "$(Get-Date):: $message" -ForegroundColor Cyan
     }
 
     function WriteSuccess($message){
-        Write-Host $message -ForegroundColor Green
+        Write-Host "$(Get-Date):: $message" -ForegroundColor Green
     }
 
     function WriteWarning($message) {
-        Write-Host $message -ForegroundColor Yellow
+        Write-Host "$(Get-Date):: $message" -ForegroundColor Yellow
     }
 
     function WriteError($message){
-        Write-Host $message -ForegroundColor Red
+        Write-Host "$(Get-Date):: $message" -ForegroundColor Red
     }
 
     function WriteErrorAndExit($message){
-        Write-Host $message -ForegroundColor Red
+        Write-Host "$(Get-Date):: $message" -ForegroundColor Red
         Write-Host "Press enter to continue ..."
         Stop-Transcript
         Read-Host | Out-Null
@@ -89,8 +93,8 @@ If (!( $isAdmin )) {
   </settings>
   <settings pass="specialize">
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <RegisteredOwner>Vulcan</RegisteredOwner>
-      <RegisteredOrganization>Vulcan Sp. z o.o.</RegisteredOrganization>
+      <RegisteredOwner>TakieTam</RegisteredOwner>
+      <RegisteredOrganization>TakieTam</RegisteredOrganization>
     </component>
     <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <RunSynchronous>
@@ -143,8 +147,8 @@ If (!( $isAdmin )) {
  <settings pass="specialize">
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <ComputerName>$Computername</ComputerName>
-        <RegisteredOwner>Vulcan</RegisteredOwner>
-          <RegisteredOrganization>Vulcan Sp. z o.o.</RegisteredOrganization>
+        <RegisteredOwner>TakieTam</RegisteredOwner>
+          <RegisteredOrganization>TakieTam</RegisteredOrganization>
     </component>
     <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <RunSynchronous>
@@ -184,84 +188,6 @@ If (!( $isAdmin )) {
         $unattendFile 
     }
 
-    Function CreateUnattendFileWin2012{
-        #Create Unattend(traditional Djoin with username/pass)
-        param (
-            [parameter(Mandatory=$true)]
-            [string]
-            $ComputerName,
-            [parameter(Mandatory=$true)]
-            [string]
-            $AdminPassword,
-            [parameter(Mandatory=$true)]
-            [string]
-            $TimeZone,
-            [parameter(Mandatory=$false)]
-            [string]
-            $RunSynchronous,
-            [parameter(Mandatory=$true)]
-            [string]
-            $DomainName
-        )
-        if ( Test-Path "Unattend.xml" ) {
-            Remove-Item .\Unattend.xml
-        }
-        $unattendFile = New-Item "Unattend.xml" -type File
-        $fileContent = @"
-<?xml version='1.0' encoding='utf-8'?>
-<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
- <settings pass="specialize">
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <ComputerName>$Computername</ComputerName>
-        <RegisteredOwner>Vulcan</RegisteredOwner>
-        <RegisteredOrganization>Vulcan Sp. z o.o.</RegisteredOrganization>
-    </component>
-    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <RunSynchronous>
-            $RunSynchronous
-        </RunSynchronous>
-    </component>
-	<component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-		<InputLocale>pl-PL</InputLocale>
-		<SystemLocale>pl-PL</SystemLocale> 
-		<UILanguage>en-US</UILanguage> 
-		<UserLocale>pl-PL</UserLocale>
-    </component>
-    <component name="Microsoft-Windows-UnattendedJoin" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <Identification>
-                <Credentials>
-                    <Domain>$DomainName</Domain>
-                    <Password>$AdminPassword</Password>
-                    <Username>Administrator</Username>
-                </Credentials>
-                <JoinDomain>$DomainName</JoinDomain>
-        </Identification>
-    </component>
- </settings>
- <settings pass="oobeSystem">
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <UserAccounts>
-        <AdministratorPassword>
-           <Value>$AdminPassword</Value>
-           <PlainText>true</PlainText>
-        </AdministratorPassword>
-      </UserAccounts>
-      <OOBE>
-        <HideEULAPage>true</HideEULAPage>
-        <SkipMachineOOBE>true</SkipMachineOOBE> 
-        <SkipUserOOBE>true</SkipUserOOBE> 
-      </OOBE>
-      <TimeZone>$TimeZone</TimeZone>
-    </component>
-  </settings>
-</unattend>
-
-"@
-
-        Set-Content $unattendFile $fileContent
-        #return the file object
-        $unattendFile 
-    }
 
     Function AdditionalLocalAccountXML{
         #Creates Additional local account unattend piece
@@ -452,7 +378,7 @@ If (!( $isAdmin )) {
 		WriteInfo "`t Looking for Parent Disk"
 		$serverparent=Get-ChildItem "$csvPath\" -Recurse | Where-Object Name -eq $VMConfig.ParentVHD
 			
-		if ($serverparent -eq $null){
+		if ($null -eq $serverparent){
 			WriteErrorAndExit "Server parent disk $($VMConfig.ParentVHD) not found."
 		}else{
 			WriteInfo "`t`t Server parent disk $($serverparent.Name) found"
@@ -503,7 +429,7 @@ If (!( $isAdmin )) {
         if($VMConfig.CompatibilityForMigrationEnabled) {$VMTemp | Set-VMProcessor -CompatibilityForMigrationEnabled $true}
 
         $MGMTNICs=$VMConfig.MGMTNICs
-        If($MGMTNICs -eq $null){
+        If($null -eq $MGMTNICs){
             $MGMTNICs = 1
         }
 
@@ -528,7 +454,7 @@ If (!( $isAdmin )) {
         $VMTemp | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $SwitchName
 
         #set MemoryMinimumBytes
-        if ($VMConfig.MemoryMinimumBytes -ne $null){
+        if ($null -ne $VMConfig.MemoryMinimumBytes){
             WriteInfo "`t Configuring MemoryMinimumBytes to $($VMConfig.MemoryMinimumBytes/1MB)MB"
             if ($VMConfig.NestedVirt){
                 "`t `t Skipping! NestedVirt configured"
@@ -597,14 +523,17 @@ If (!( $isAdmin )) {
 		
 
         #Create Unattend file
+        $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($localAdminPassword)
+        $UnsecurePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+
         if ($VMConfig.Unattend -eq "NoDjoin" -or $VMConfig.SkipDjoin){
             WriteInfo "`t Skipping Djoin"
             if ($VMConfig.AdditionalLocalAdmin){
                 WriteInfo "`t Additional Local Admin $($VMConfig.AdditionalLocalAdmin) will be added"
-                $AdditionalLocalAccountXML=AdditionalLocalAccountXML -AdditionalAdminName $VMConfig.AdditionalLocalAdmin -AdminPassword $LabConfig.AdminPassword
-                $unattendfile=CreateUnattendFileNoDjoin -ComputerName $Name -AdminPassword $LabConfig.AdminPassword -RunSynchronous $RunSynchronous -AdditionalAccount $AdditionalLocalAccountXML -TimeZone $TimeZone
+                $AdditionalLocalAccountXML=AdditionalLocalAccountXML -AdditionalAdminName $VMConfig.AdditionalLocalAdmin -AdminPassword $UnsecurePassword
+                $unattendfile=CreateUnattendFileNoDjoin -ComputerName $Name -AdminPassword $UnsecurePassword -RunSynchronous $RunSynchronous -AdditionalAccount $AdditionalLocalAccountXML -TimeZone $TimeZone
             }else{
-                $unattendfile=CreateUnattendFileNoDjoin -ComputerName $Name -AdminPassword $LabConfig.AdminPassword -RunSynchronous $RunSynchronous -TimeZone $TimeZone
+                $unattendfile=CreateUnattendFileNoDjoin -ComputerName $Name -AdminPassword $UnsecurePassword -RunSynchronous $RunSynchronous -TimeZone $TimeZone
             }
         }elseif($VMConfig.Unattend -eq "DjoinBlob" -or -not ($VMConfig.Unattend)){
             WriteInfo "`t Creating Unattend with djoin blob"
@@ -612,7 +541,7 @@ If (!( $isAdmin )) {
             Invoke-Command -VMGuid $DC.id -Credential $cred  -ScriptBlock {param($Name,$path,$Labconfig); djoin.exe /provision /domain $($labconfig.DomainName).Split(".")[0] /machine $Name /savefile $path } -ArgumentList $Name,$path,$Labconfig
             $blob=Invoke-Command -VMGuid $DC.id -Credential $cred -ScriptBlock {param($path); get-content $path} -ArgumentList $path
             Invoke-Command -VMGuid $DC.id -Credential $cred -ScriptBlock {param($path); Remove-Item $path} -ArgumentList $path
-            $unattendfile=CreateUnattendFileBlob -Blob $blob.Substring(0,$blob.Length-1) -AdminPassword $LabConfig.AdminPassword -RunSynchronous $RunSynchronous -TimeZone $TimeZone
+            $unattendfile=CreateUnattendFileBlob -Blob $blob.Substring(0,$blob.Length-1) -AdminPassword $UnsecurePassword -RunSynchronous $RunSynchronous -TimeZone $TimeZone
         }elseif($VMConfig.Unattend -eq "None"){
             $unattendFile=$Null
         }
@@ -649,11 +578,6 @@ If (!( $isAdmin )) {
 
 #region Set variables
 
-    #If (!$LabConfig.DomainName){
-    #    WriteErrorAndExit "`t DomainName not detected. Exiting"
-    #}
-
-
     $DN=$null
 	if($LabConfig.DomainName)
 	{
@@ -664,7 +588,7 @@ If (!( $isAdmin )) {
 	}
 
     WriteInfoHighlighted "List of variables used"
-    WriteInfo "`t Prefix used in lab is $($labconfig.prefix)"
+    if($labconfig.prefix){WriteInfo "`t Prefix used in lab is $($labconfig.prefix)"}
 
     $SwitchName=($labconfig.prefix+$LabConfig.SwitchName)
     WriteInfo "`t Switchname is $SwitchName" 
@@ -683,7 +607,7 @@ If (!( $isAdmin )) {
 
 
 	#Check if running inside Failover Cluster
-	$isInCluster = $(if((Get-WMIObject -Class MSCluster_ResourceGroup -Namespace root\mscluster -ErrorAction SilentlyContinue) -ne $null){$true}else {$false})
+	$isInCluster = $(if($null -ne (Get-CimInstance -NameSpace 'root\mscluster' -Class "MSCluster_ResourceGroup" -ErrorVariable ProcessError -ErrorAction SilentlyContinue)){$true}else {$false})
 	if($isInCluster)
 	{
 		$servers = Get-ClusterNode
@@ -725,17 +649,9 @@ If (!( $isAdmin )) {
         WriteInfoHighlighted "Creating Switch"
         WriteInfo "`t Checking if $SwitchName already exists..."
 
-        if ((Get-VMSwitch -Name $SwitchName -ErrorAction Ignore) -eq $Null){
+        if ($Null -eq (Get-VMSwitch -Name $SwitchName -ErrorAction Ignore)){
             WriteErrorAndExit "`t $SwitchName not exists. Exiting"
         }
-
-
-    ####Testing if lab already exists.
-    ###    WriteInfo "Testing if lab already exists."
-	###	if ((Get-VM -ComputerName $servers  -Name ($LabConfig.DC) -ErrorAction SilentlyContinue) -ne $null){
-	###		$LABExists=$True
-	###		WriteInfoHighlighted "`t Lab already exists. If labconfig contains additional VMs, they will be added."
-	###	}
 
     #Generate DSC Config
         if ($VMConfig.DSCMode -eq 'Pull'){
@@ -743,138 +659,106 @@ If (!( $isAdmin )) {
             PullClientConfig -ComputerName $VMConfig.VMName -DSCConfig $VMConfig.DSCConfig -OutputPath "$PSScriptRoot\temp\dscconfig" -DomainName $LabConfig.DomainName
         }
 
-	if($labconfig.DC)
-	{
-		$DC=Get-VM -ComputerName $servers -Name ($labconfig.DC) -ErrorAction SilentlyContinue
+	if($labconfig.DC){
+		$DC=Get-VM -Name ($labconfig.DC) -ErrorAction SilentlyContinue
 		
-		if($DC)
-		{
+		if($DC){
 			#Credentials for Session
+            WriteSuccess "`t Domain Controller $($labconfig.DC) found on local hyper-v node"
+
 			$username = "$($($labconfig.DomainName).Split(".")[0])\$($Labconfig.DomainAdminName)"
-			$password = $LabConfig.AdminPassword
-			$secstr = New-Object -TypeName System.Security.SecureString
-			$password.ToCharArray() | ForEach-Object {$secstr.AppendChar($_)}
-			$cred = new-object -typename System.Management.Automation.PSCredential -argumentlist $username, $secstr
+            if(-Not $LabConfig.DomainAdminPassword){
+                $password = Read-Host "Enter domain admin password" -AsSecureString
+            }
+            else {
+                $password = $LabConfig.DomainAdminPassword
+            }
+			
+			$cred = new-object -typename System.Management.Automation.PSCredential -argumentlist $username, $password
+
+            WriteInfo "`t Checking connectivity and login/password validation for domain controller $($DC.Name)"
+            Invoke-Command -VMGuid $DC.id -Credential $cred  -ScriptBlock{Write-Host $env:computername} -ErrorVariable WrongPassword
+            if ($null -eq $WrongPassword)
+            {
+                WriteErrorAndExit $WrongPassword
+            }
 		}
+        else {
+            WriteErrorAndExit "Domain controller $($labconfig.DC) not found on $($env:computername) (Check the name or migrate it to current host)"
+        }
 	}
+
+    WriteInfo "`t Set local admin password for new unattended VMs"
+    $localAdminPassword = Read-Host "Enter defaul local admin password" -AsSecureString
 	
 #endregion
 
 
 #region Provision VMs
 
-    #DSC config for LCM (in case Pull configuration is specified)
-        WriteInfoHighlighted "Creating DSC config to configure DC as pull server"
-
-        [DSCLocalConfigurationManager()]
-        Configuration PullClientConfig 
-        {
-            param
-                (
-                    [Parameter(Mandatory=$true)]
-                    [string[]]$ComputerName,
-
-                    [Parameter(Mandatory=$true)]
-                    [string[]]$DSCConfig,
-
-                    [Parameter(Mandatory=$true)]
-                    [string[]]$DomainName
-                )
-            Node $ComputerName {
-                Settings{
-
-                    AllowModuleOverwrite = $True
-                    ConfigurationMode = 'ApplyAndAutoCorrect'
-                    RefreshMode = 'Pull'
-                    RebootNodeIfNeeded = $True
-                    ActionAfterReboot = 'ContinueConfiguration'
-                    }
-
-                    ConfigurationRepositoryWeb PullServerWeb { 
-                    ServerURL = "http://$($LabConfig.DC).$($DomainName):8080/PSDSCPullServer.svc"
-                    AllowUnsecureConnection = $true
-                    RegistrationKey = '14fc8e72-5036-4e79-9f89-5382160053aa'
-                    ConfigurationNames = $DSCConfig
-                    }
-
-                    ReportServerWeb PullServerReports {
-                    ServerURL = "http://$($LabConfig.DC).$($DomainName):8080/PSDSCPullServer.svc"
-                    RegistrationKey = '14fc8e72-5036-4e79-9f89-5382160053aa'
-                    }
-
-                    $DSCConfig | ForEach-Object {
-                        PartialConfiguration $_
-                        {
-                        RefreshMode = 'Pull'
-                        ConfigurationSource = '[ConfigurationRepositoryWeb]PullServerWeb'
-                        }
-                    }
-            }
-        }
-
-
     #process $labconfig.VMs and create VMs (skip if machine already exists)
+        $vmCreated = @()
         WriteInfoHighlighted 'Processing $LabConfig.VMs, creating VMs'
         foreach ($VMConfig in $LABConfig.VMs.GetEnumerator()){
             if (!(Get-VM -ComputerName $servers  -Name "$($VMConfig.vmname)" -ErrorAction SilentlyContinue)){
-                # Ensure that Configuration is set and use Simple as default
-                if(-not $VMConfig.configuration) {
-                    $VMConfig.configuration = "Simple"
+
+                #create VM 
+                BuildVM -VMConfig $($VMConfig) -LabConfig $labconfig
+                
+                #compose VM name
+                $VMname=$VMConfig.VMName
+                #add "HDDs"
+                If (($VMConfig.HDDNumber -ge 1) -and ($null -ne $VMConfig.HDDNumber)) {
+                    $HDDs= 1..$VMConfig.HDDNumber | ForEach-Object { New-VHD -Path "$($VMConfig.csvPath)\$VMname\Virtual Hard Disks\HDD-$_.VHDX" -Dynamic -Size $VMConfig.HDDSize}
+                    WriteInfoHighlighted "`t Adding Virtual HDD Disks"
+                    $HDDs | ForEach-Object {
+                        $filename=$_.Path.Substring($_.Path.LastIndexOf("\")+1,$_.Path.Length-$_.Path.LastIndexOf("\")-1)
+                        Add-VMHardDiskDrive -Path $_.path -VMName $VMname
+                        WriteInfo "`t`t $filename size $($_.size /1GB)GB added to $VMname"
+                    }
                 }
 
-                #create VM with Simple configuration
-                    if ($VMConfig.configuration -eq 'Simple'){
-                        BuildVM -VMConfig $($VMConfig) -LabConfig $labconfig
-						
-						#compose VM name
-                            $VMname=$VMConfig.VMName
-						#add "HDDs"
-                                If (($VMConfig.HDDNumber -ge 1) -and ($VMConfig.HDDNumber -ne $null)) {
-                                    $HDDs= 1..$VMConfig.HDDNumber | ForEach-Object { New-VHD -Path "$($VMConfig.csvPath)\$VMname\Virtual Hard Disks\HDD-$_.VHDX" -Dynamic -Size $VMConfig.HDDSize}
-                                    WriteInfoHighlighted "`t Adding Virtual HDD Disks"
-                                    $HDDs | ForEach-Object {
-                                        $filename=$_.Path.Substring($_.Path.LastIndexOf("\")+1,$_.Path.Length-$_.Path.LastIndexOf("\")-1)
-                                        Add-VMHardDiskDrive -Path $_.path -VMName $VMname
-                                        WriteInfo "`t`t $filename size $($_.size /1GB)GB added to $VMname"
-                                    }
-                                }
+                #configure HostResourceProtection on all VM CPUs
+                WriteInfo "`t Configuring EnableHostResourceProtection on $($VMConfig.VMName) VM processors"
+                Set-VMProcessor -EnableHostResourceProtection $true -VMName $VMConfig.VMName -ErrorAction SilentlyContinue
+
+                if($VMConfig.CpuPriority){
+                    WriteInfo "`t Configuring CpuPriority ($($VMConfig.CpuPriority)) on $($VMConfig.VMName) VM processors"
+                    Set-VMProcessor -RelativeWeight $VMConfig.CpuPriority -VMName $VMConfig.VMName -ErrorAction SilentlyContinue
+                }
+
+                if($isInCluster){
+                    # Add as cluster resource and move to best node
+                    WriteInfo "`t Add $($VMConfig.VMName) to Hyper-V Cluster"
+                    Add-ClusterVirtualMachineRole -VirtualMachine $VMConfig.VMName
+                    WriteInfo "`t Move $($VMConfig.VMName) to best possible node"
+                    Move-ClusterVirtualMachineRole -Name $VMConfig.VMName -MigrationType Quick
+
+                    # Set VM priority
+                    #  High (3000)
+                    #  Medium (2000): The default setting
+                    #  Low (1000)
+                    #  No Auto Start (0)
+                    $vmPriority = $VMConfig.HyperVPriority
+                    if( $vmPriority -eq "Low" ){
+                        (Get-ClusterGroup $VMConfig.VMName).Priority=1000
+                        WriteInfo "`t VM priority set to Low for VM $($VMConfig.VMName)"
+                    } elseif( $vmPriority -eq "High" ){
+                        (Get-ClusterGroup $VMConfig.VMName).Priority=3000
+                        WriteInfo "`t VM priority set to High for VM $($VMConfig.VMName)"
+                    } elseif( $vmPriority  -is [int] ){
+                        (Get-ClusterGroup $VMConfig.VMName).Priority=$vmPriority
+                        WriteInfo "`t VM priority set to $vmPriority for VM $($VMConfig.VMName)"
+                    } else {
+                        WriteInfo "`t Leaving default VM priority for $($VMConfig.VMName)"
                     }
+                }
 
-                #create VM with S2D configuration 
-                    if ($VMConfig.configuration -eq 'S2D'){
-                        #build VM
-                            BuildVM -VMConfig $VMConfig -LabConfig $labconfig
-                        #compose VM name
-                            $VMname=$VMConfig.VMName
-
-                        #Add disks
-                            #add "SSDs"
-                                If (($VMConfig.SSDNumber -ge 1) -and ($VMConfig.SSDNumber -ne $null)){         
-                                    $SSDs= 1..$VMConfig.SSDNumber | ForEach-Object { New-vhd -Path "$csvPath\$VMname\Virtual Hard Disks\SSD-$_.VHDX" -Dynamic -Size $VMConfig.SSDSize}
-                                    WriteInfoHighlighted "`t Adding Virtual SSD Disks"
-                                    $SSDs | ForEach-Object {
-                                        $filename=$_.Path.Substring($_.Path.LastIndexOf("\")+1,$_.Path.Length-$_.Path.LastIndexOf("\")-1)
-                                        Add-VMHardDiskDrive -Path $_.path -VMName $VMname
-                                        WriteInfo "`t`t $filename size $($_.size /1GB)GB added to $VMname"
-                                    }
-                                }
-                            #add "HDDs"
-                                If (($VMConfig.HDDNumber -ge 1) -and ($VMConfig.HDDNumber -ne $null)) {
-                                    $HDDs= 1..$VMConfig.HDDNumber | ForEach-Object { New-VHD -Path "$csvPath\$VMname\Virtual Hard Disks\HDD-$_.VHDX" -Dynamic -Size $VMConfig.HDDSize}
-                                    WriteInfoHighlighted "`t Adding Virtual HDD Disks"
-                                    $HDDs | ForEach-Object {
-                                        $filename=$_.Path.Substring($_.Path.LastIndexOf("\")+1,$_.Path.Length-$_.Path.LastIndexOf("\")-1)
-                                        Add-VMHardDiskDrive -Path $_.path -VMName $VMname
-                                        WriteInfo "`t`t $filename size $($_.size /1GB)GB added to $VMname"
-                                    }
-                                }
-                    }
-
-
+                $vmCreated += $VMConfig.VMName
             }
 			else
 			{
-				WriteSuccess "`t$($VMConfig.vmname) already exists."
+				WriteSuccess "$($VMConfig.vmname) already exists."
 			}
         }
 
@@ -891,14 +775,121 @@ If (!( $isAdmin )) {
             remove-item "$PSScriptRoot\unattend.xml"
         }
 
-    #list VMs 
-        Get-VM -ComputerName $servers  | Where-Object name -like "$($labconfig.Prefix)*"  | Where-Object {$_.Name -in $LABConfig.VMs.VMName} | ForEach-Object { WriteSuccess "Machine $($_.VMName) provisioned" }
-
     #write how much it took to deploy
         WriteInfo "Script finished at $(Get-date) and took $(((get-date) - $StartDateTime).TotalMinutes) Minutes"
 
-    Stop-Transcript
 
+    WriteSuccess "Press enter to start VMs and change to static MACs ..."
+    Read-Host | Out-Null
+
+    #region Startup
+        #start all vms and check for MAC addressess conflicts, set static MACs
+        $StartDateTime = get-date
+        WriteInfoHighlighted "VM startup started at $StartDateTime"
+
+        WriteInfo "Gathering data about new VMs"
+        $VMs = Get-VM -ComputerName $servers -Name $vmCreated -ErrorAction SilentlyContinue
+
+        # starting VMs
+        WriteInfo "Starting new VMs"
+        foreach($vm in $VMs)
+        {
+            if($vm.State -eq "Off")
+            {
+                WriteInfo "Starting VM $($vm.Name)"
+                Start-VM $vm
+                WriteInfo "Waiting 5 second to perform next VM"
+                Start-Sleep -Seconds 5
+            } 
+            else {
+                WriteInfo "VM $($vm.Name)) is in $($vm.State) state"
+            }
+        }
+
+        if($LabConfig.MacAddressesCheckClusters)
+        {
+
+            # Waiting to start all VMs
+            $uptimeCondition = 5
+            WriteInfo "Waiting till all started VMs will have uptime at least $uptimeCondition minutes."
+            foreach($vm in $VMs)
+            {
+                WriteInfo "Checking uptime for $($vm.Name) ($($vm.ComputerName))"
+                while($vm.Uptime.TotalMinutes -lt $uptimeCondition)
+                {
+                    WriteInfo "$($vm.Name) ($($vm.ComputerName)) uptime is $($vm.Uptime.TotalMinutes) minutes. Sleeping for 30 seconds..."
+                    Start-Sleep -Seconds 30
+                }
+            }
+
+            WriteInfo "MAC addresses check started"
+            # Check MAC addresses conflicts
+            do {
+                $repeatCheck = $False
+                $allVmsMAC = @()
+
+                WriteInfo "Gathering data about new VMs"
+                $VMs = Get-VM -ComputerName $servers -Name $vmCreated -ErrorAction SilentlyContinue
+
+                foreach($cl in $LabConfig.MacAddressesCheckClusters)
+                {
+                    WriteInfo "Gathering data from $cl"
+                    foreach($server in (Get-ClusterNode -Cluster $cl))
+                    {
+                        Invoke-Command -ComputerName $server -ScriptBlock{get-VM | Get-VMNetworkAdapter | SELECT VMName, MacAddress,IPAddresses} -AsJob
+                    }
+                }
+
+                WriteInfo "Waiting for jobs completions"
+                $allVmsMAC += (Get-Job | Wait-Job | Receive-Job)
+                Get-Job | Remove-Job 
+                
+                WriteInfo "Looking for MAC conflicts"
+                $allVmsMACUnique = $allVmsMAC.MacAddress | Select-Object -Unique
+                $duplicatedMacs = Compare-Object -ReferenceObject $allVmsMAC.MacAddress -DifferenceObject $allVmsMACUnique
+                $duplicatedMacs = $duplicatedMacs | ForEach-Object {$_.InputObject}
+                $allVmsMAC | ForEach-Object {if($_.MacAddress -in $duplicatedMacs) {Write-Host "$($_.MacAddress) `t$($_.VmName) `t$($_.IPAddresses)"}}
+                
+                $repeatCheck = $VMs | Get-VMNetworkAdapter | ForEach-Object { if($_.MacAddress -in $duplicatedMacs) {
+                        Write-Host "Solving MAC conflict for $($_.MacAddress) `t$($_.VmName) `t$($_.IPAddresses)"
+                        WriteInfo "$($_.VmName) shutting down"
+                        stop-vm $_.VmName -ComputerName $servers
+                        WriteInfo "`t Move $($_.VmName) to best possible node"
+                        Move-ClusterVirtualMachineRole -Name $_.VmName -MigrationType Quick
+                        WriteInfo "$($_.VmName) starting"
+                        start-vm $_.VmName -ComputerName $servers
+                        WriteInfo "$($_.VmName) started"
+                        return $True
+                    }
+                }
+            } while ($repeatCheck)
+
+            WriteInfo "MAC addresses check finished. Changing to static MAC addresses"
+
+            # changing MAC address to static
+            foreach($vm in $VMs)
+            {
+                $MacAddress = $vm | Get-VMNetworkAdapter | where-object {$_.DynamicMacAddressEnabled -eq $True}
+	            if($MacAddress)
+                {
+                    WriteInfo "$($vm.name) shutting down"
+                    $vm | stop-vm
+                    WriteInfo "$($vm.name) changing to static MAC address."
+                    $vm | Set-VMNetworkAdapter -StaticMacAddress $MacAddress.MacAddress
+                    WriteInfo "$($vm.name) starting"
+                    $vm | start-vm
+                    WriteInfo "$($vm.name) started"
+                }
+            }
+        }
+        
+        #write how much it took to deploy
+        WriteInfo "Startup finished at $(Get-date) and took $(((get-date) - $StartDateTime).TotalMinutes) Minutes"
+
+    #endregion
+
+    Stop-Transcript
+    
     WriteSuccess "Press enter to continue ..."
     Read-Host | Out-Null
 #endregion

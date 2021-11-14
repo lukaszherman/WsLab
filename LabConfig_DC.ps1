@@ -1,7 +1,5 @@
 $LabConfig=@{
-	DomainAdminName='Administrator'; 
-	AdminPassword='Demo.123';
-	
+	DomainAdminName='Administrator';	
 	SwitchName = 'PocSwitchTest';
 }
 
